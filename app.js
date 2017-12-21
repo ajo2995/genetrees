@@ -1,0 +1,56 @@
+'use strict';
+
+var SwaggerExpress = require('swagger-express-mw');
+var pathToSwaggerUi = require('swagger-ui-dist').absolutePath();
+var express = require('express');
+// var io = require('socket.io');
+var apicache = require('apicache');
+var redis = require('redis');
+
+var app = express();
+var cache = apicache.options({redisClient: redis.createClient()}).middleware;
+app.use(cache('1 hour'));
+
+module.exports = app; // for testing
+
+var config = {
+  appRoot: __dirname // required config
+};
+
+SwaggerExpress.create(config, function(err, swaggerExpress) {
+  if (err) { throw err; }
+
+  var basePath = swaggerExpress.runner.swagger.basePath;
+
+  app.get('/', function(req, res, next) {
+    res.redirect(basePath)
+  });
+
+  app.get(basePath, function(req, res, next) {
+    res.redirect(basePath+'/docs?url='+basePath+'/swagger');
+  });
+
+  app.use(basePath+'/docs', express.static(pathToSwaggerUi));
+
+  // install middleware
+  swaggerExpress.register(app);
+
+  var port = process.env.PORT || 10010;
+  var server = app.listen(port);
+
+  // var myio = io.listen(server);
+  // var chat = myio.of('/chat');
+  // chat.on('connection', function (socket) {
+  //   console.log('a user connected');
+  //   socket.on('disconnect', function() {
+  //     console.log('a user disconnected');
+  //   });
+  //   socket.on('chat message', function(msg) {
+  //     console.log('message: ' + msg);
+  //     socket.emit('message', {message: msg});
+  //     setTimeout(function() {
+  //       socket.emit('message', {message: msg.toUpperCase() + '!!!'});
+  //     }, 10000);
+  //   });
+  // });
+});

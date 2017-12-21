@@ -1,0 +1,224 @@
+swagger: "2.0"
+info:
+  version: "0.0.1"
+  title: Tree DB
+# during dev, should point to your local machine
+host: localhost:10010
+# basePath prefixes all resource paths 
+basePath: /api/v1
+# 
+schemes:
+  # tip: remove http to make production-grade
+  - http
+  - https
+# format of bodies a client can send (Content-Type)
+consumes:
+  - application/json
+# format of the responses to the client (Accepts)
+produces:
+  - application/json
+paths:
+  /docs:
+    get:
+      summary: "Web site describing this API"
+      tags:
+        - "API Documentation"
+      responses:
+        200:
+          description: "HTML documentation for this web service, powered by swagger."
+  /sets:
+    x-swagger-router-controller: sets
+    get:
+      tags:
+        - sets
+      description: Returns a list of sets of trees
+      operationId: getSets
+      parameters:
+        - in: query
+          name: q
+          type: string
+          description: "try 'platform:compara'"
+      responses:
+        "200":
+          description: Success
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/SetsResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+  /search:
+    # binds a127 app logic to a route
+    x-swagger-router-controller: search
+    get:
+      tags:
+        - search
+      description: Returns a list of trees matching the search criteria in the given set
+      # used as the method name of the controller
+      operationId: search
+      parameters:
+        - name: setId
+          in: query
+          type: string
+          description: eg39
+          required: true
+        - name: q
+          in: query
+          type: string
+          description: try 'geneId:AT1G32900'
+      responses:
+        "200":
+          description: Success
+          schema:
+            # a pointer to a definition
+            type: array
+            items:
+              $ref: "#/definitions/SearchResponse"
+        # responses may fall through to errors
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+  /tree:
+    x-swagger-router-controller: tree
+    get:
+      tags:
+        - tree
+      description: Return the requested tree
+      operationId: getTree
+      parameters:
+      - name: setId
+        in: query
+        description: Identifier for the tree set
+        required: true
+        type: string
+      - name: treeId
+        in: query
+        description: Identifier for the tree
+        required: true
+        type: string
+      - name: filter
+        in: query
+        description: filter on leaf nodes
+        type: string
+        required: false
+      - name: subtree
+        in: query
+        description: fetch a subtree rooted at this node
+        required: false
+        type: integer
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: "#/definitions/TreeResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+  /swagger:
+    x-swagger-pipe: swagger_raw
+# complex objects have schema definitions
+definitions:
+  SetsResponse:
+    required:
+      - setId
+    properties:
+      setId:
+        type: string
+      name:
+        type: string
+      description:
+        type: string
+      date:
+        type: string
+        format: date
+
+  SearchResponse:
+    required:
+      - setId
+      - treeId
+    properties:
+      setId:
+        type: string
+      treeId:
+        type: string
+      name:
+        type: string
+      description:
+        type: string
+      date:
+        type: string
+        format: date
+
+  TreeResponse:
+    allOf:
+      - $ref: '#/definitions/TreeNode'
+      -
+        required:
+          - treeId
+          - treeType
+        properties:
+          treeId:
+            type: string
+          treeType:
+            type: string
+            enum:
+              - 'geneTree'
+              - 'speciesTree'
+
+  TreeNode:
+    allOf:
+      - $ref: '#/definitions/TreeInternalNode'
+      - $ref: '#/definitions/TreeLeafNode'
+      -
+        required:
+          - nodeId
+        properties:
+          nodeId:
+            type: integer
+            minimum: 0
+          distanceToParent:
+            type: number
+            minimum: 0.0
+
+  TreeInternalNode:
+    properties:
+      nodeType:
+        type: string
+        enum:
+          - "duplication"
+          - "speciation"
+          - "dubious"
+          - "gene_split"
+          - "other"
+      bootstrap:
+        type: integer
+        minimum: 0
+        maximum: 100
+      duplicationConfidenceScore:
+        type: number
+      children:
+        type: array
+        items:
+          $ref: '#/definitions/TreeNode'
+
+  TreeLeafNode:
+    properties:
+      geneId:
+        type: string
+      geneDescription:
+        type: string
+      sequence:
+        type: string
+      cigar:
+        type: string
+
+  ErrorResponse:
+    required:
+      - message
+    properties:
+      message:
+        type: string
