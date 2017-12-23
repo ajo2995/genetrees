@@ -16,15 +16,17 @@ var comparaDb = mysql.createConnection({
 
 var solrUrl = argv.s;
 
+var geneOrderQuery = 'SELECT gene_member_id from gene_member order by genome_db_id, dnafrag_id, dnafrag_start';
+
 var internalNodeQuery = 'SELECT\n' +
-  ' gtr.stable_id as treeId_s,\n' +
-  ' gtn.node_id as nodeId_i,\n' +
-  ' gtn.parent_id as parentId_i,\n' +
-  ' gtn.root_id as rootId_i,\n' +
-  ' gtn.distance_to_parent as distanceToParent_f,\n' +
-  ' gtna.node_type as nodeType_s,\n' +
-  ' gtna.bootstrap as bootstrap_i,\n' +
-  ' gtna.duplication_confidence_score as duplicationConfidenceScore_f,\n' +
+  ' gtr.stable_id as treeId,\n' +
+  ' gtn.node_id as nodeId,\n' +
+  ' gtn.parent_id as parentId,\n' +
+  ' gtn.root_id as rootId,\n' +
+  ' gtn.distance_to_parent as distanceToParent,\n' +
+  ' gtna.node_type as nodeType,\n' +
+  ' gtna.bootstrap as bootstrap,\n' +
+  ' gtna.duplication_confidence_score as duplicationConfidenceScore,\n' +
   ' stn.taxon_id as taxonId_i\n' +
   'FROM\n' +
   ' gene_tree_node gtn,\n' +
@@ -38,26 +40,32 @@ var internalNodeQuery = 'SELECT\n' +
   ' gtna.species_tree_node_id = stn.node_id';
 
 var leafNodeQuery = 'SELECT\n' +
-  ' gtr.stable_id as treeId_s,\n' +
-  ' gtn.node_id as nodeId_i,\n' +
-  ' gtn.parent_id as parentId_i,\n' +
-  ' gtn.root_id as rootId_i,\n' +
-  ' gtn.distance_to_parent as distanceToParent_f,\n' +
-  ' sm.stable_id as proteinId_s,\n' +
-  ' sm.display_label as proteinName_s,\n' +
-  ' sm.description as proteinDescription_t,\n' +
-  ' sm.taxon_id as taxonId_i,\n' +
-  ' gm.stable_id as geneId_s,\n' +
-  ' gm.description as geneDescription_t,\n' +
-  ' gm.display_label as geneName_s,\n' +
-  ' sq.sequence as sequence_x,\n' +
-  ' gam.cigar_line as cigar_x\n' +
+  ' gtr.stable_id as treeId,\n' +
+  ' gtn.node_id as nodeId,\n' +
+  ' gtn.parent_id as parentId,\n' +
+  ' gtn.root_id as rootId,\n' +
+  ' gtn.distance_to_parent as distanceToParent,\n' +
+  ' sm.stable_id as proteinId,\n' +
+  ' sm.display_label as proteinName,\n' +
+  ' sm.description as proteinDescription,\n' +
+  ' sm.taxon_id as taxonId,\n' +
+  ' gm.gene_member_id,\n' +
+  ' gm.stable_id as geneId,\n' +
+  ' gm.description as geneDescription,\n' +
+  ' gm.display_label as geneName,\n' +
+  ' gm.dnafrag_start as geneStart,\n' +
+  ' gm.dnafrag_end as geneEnd,\n' +
+  ' gm.dnafrag_strand as geneStrand,\n' +
+  ' d.name as geneRegion,\n' +
+  ' sq.sequence as sequence,\n' +
+  ' gam.cigar_line as cigar\n' +
   'FROM\n' +
   ' gene_tree_node gtn,\n' +
   ' gene_tree_root gtr,\n' +
   ' seq_member sm,\n' +
   ' sequence sq,\n' +
   ' gene_member gm,\n' +
+  ' dnafrag d,\n' +
   ' gene_align_member gam\n' +
   'WHERE\n' +
   ' gtr.stable_id IS NOT NULL and\n' +
@@ -65,6 +73,7 @@ var leafNodeQuery = 'SELECT\n' +
   ' gtn.seq_member_id = sm.seq_member_id and\n' +
   ' sm.sequence_id = sq.sequence_id and\n' +
   ' sm.gene_member_id = gm.gene_member_id and\n' +
+  ' gm.dnafrag_id = d.dnafrag_id and\n' +
   ' gtr.gene_align_id = gam.gene_align_id and\n' +
   ' gam.seq_member_id = gtn.seq_member_id';
 
@@ -90,13 +99,40 @@ function createSolrStream(url) {
   return duplexer(jsonStreamStringify, postRequest);
 }
 
-comparaDb.query(internalNodeQuery + '; ' + leafNodeQuery)
-  .stream({highWaterMark: 10})
-  .pipe(tidyRow)
-  .pipe(createSolrStream(solrUrl))
-  .on('end', function() {
-    console.log('all tree nodes are in the solr database now.');
-    comparaDb.end(function(err) {
-      console.error('closed mysql connection');
-    })
+comparaDb.query(geneOrderQuery, function(err, rows) {
+  if (err) {
+    throw err;
+  }
+  console.error('finished geneOrderQuery');
+  var geneRank = [];
+  rows.forEach(function(row, idx) {
+    geneRank[row.gene_member_id] = idx;
   });
+
+  var addRank = through2.obj(function (row, encoding, done) {
+    row.id = row.treeId + "_" + row.nodeId; // because we need a unique id for solr to be happy?
+    if (row.gene_member_id) {
+      var rank = geneRank[row.gene_member_id];
+      row.geneRank = [rank];
+      row.geneNeighbors = [];
+      for(var i=rank - 10; i < rank + 10; i++) {
+        row.geneNeighbors.push(i);
+      }
+      delete row.gene_member_id;
+    }
+    this.push(row);
+    done();
+  });
+
+  comparaDb.query(internalNodeQuery + '; ' + leafNodeQuery)
+    .stream({highWaterMark: 100})
+    .pipe(tidyRow)
+    .pipe(addRank)
+    .pipe(createSolrStream(solrUrl))
+    .on('end', function() {
+      console.log('all tree nodes are in the solr database now.');
+      comparaDb.end(function(err) {
+        console.error('closed mysql connection');
+      })
+    });
+});
