@@ -128,30 +128,13 @@ definitions:
     properties:
       setId:
         type: string
-      name:
-        type: string
-      description:
-        type: string
-      date:
-        type: string
-        format: date
 
   SearchResponse:
     required:
-      - setId
       - treeId
     properties:
-      setId:
-        type: string
       treeId:
         type: string
-      name:
-        type: string
-      description:
-        type: string
-      date:
-        type: string
-        format: date
 
   TreeResponse:
     allOf:

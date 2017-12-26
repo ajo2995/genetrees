@@ -11,6 +11,13 @@
   - Or the operationId associated with the operation in your Swagger document
 
 */
+var request = require('request');
+var FlatToNested = require('flat-to-nested');
+var flatToNested = new FlatToNested({
+  id: 'nodeId',
+  parent: 'parentId'
+});
+
 module.exports = {
   getTree: getTree
 };
@@ -29,17 +36,33 @@ function getTree(req, res) {
   var filter = req.swagger.params.filter || '';
   var subtree = req.swagger.params.subtree || '';
 
-  // check if we have this query cached - or is that something volos handles as middleware?
   // get the url for the solr instance with setId trees
+  var url = 'http://localhost:8983/solr/'+setId+'/query';
   // build a query for the given tree
+  url += '?rows=3000&q=treeId:'+treeId;
   // possibly apply filters and subtree
+  if (filter) {
+
+  }
+  if (subtree) {
+
+  }
   // run the query
-  // assemble the tree from the matching solr docs
-  // send the json response
-  // cache the response - unless handled by middleware
-  res.json({
-    treeId: 'EPlGT00820000103641',
-    treeType: 'geneTree',
-    nodeId: 123
+  request(url, function(err, response, body) {
+    if (err) {
+      res.json({error: err});
+    }
+    // assemble the tree from the matching solr docs
+    // send the json response
+    // cache the response - unless handled by middleware
+    var nodes = JSON.parse(body).response.docs;
+    // move this logic into the build script
+    nodes.forEach(function(node) {
+      if (node.nodeId === node.rootId) {
+        delete node.parentId;
+        node.treeType = 'geneTree';
+      }
+    });
+    res.json(flatToNested.convert(nodes));
   });
 }

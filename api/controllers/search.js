@@ -11,6 +11,7 @@
   - Or the operationId associated with the operation in your Swagger document
 
 */
+var request = require('request');
 module.exports = {
   search: search
 };
@@ -26,9 +27,17 @@ function search(req, res) {
   // variables defined in the Swagger document can be referenced using req.swagger.params.{parameter_name}
   var query = req.swagger.params.q.value || '*:*';
   var setId = req.swagger.params.setId.value || '';
-  res.json([{
-    setId: 'ensembl_compara_plants_38',
-    treeId: 'EPlGT00820000103641',
-    date: '2017-07-21'
-  }]);
+  var url = 'http://localhost:8983/solr/'+setId+'/query?fl=treeId&q='+query;
+  request(url, function(err, response, body) {
+    if (err) {
+      res.json({error: err});
+    }
+    response = JSON.parse(body).response;
+    if (response) {
+      res.json(response.docs);
+    }
+    else {
+      res.json([]);
+    }
+  });
 }

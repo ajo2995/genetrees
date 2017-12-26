@@ -22,11 +22,11 @@ SwaggerExpress.create(config, function(err, swaggerExpress) {
 
   var basePath = swaggerExpress.runner.swagger.basePath;
 
-  app.get('/', function(req, res, next) {
+  app.get('/', function(req, res) {
     res.redirect(basePath)
   });
 
-  app.get(basePath, function(req, res, next) {
+  app.get(basePath, function(req, res) {
     res.redirect(basePath+'/docs?url='+basePath+'/swagger');
   });
 
@@ -37,6 +37,9 @@ SwaggerExpress.create(config, function(err, swaggerExpress) {
 
   var port = process.env.PORT || 10010;
   var server = app.listen(port);
+  if (server) {
+    console.log('tree service is listening on port '+port);
+  }
 
   // var myio = io.listen(server);
   // var chat = myio.of('/chat');
