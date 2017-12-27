@@ -2,7 +2,6 @@
 
 var SwaggerExpress = require('swagger-express-mw');
 var pathToSwaggerUi = require('swagger-ui-dist').absolutePath();
-console.log(pathToSwaggerUi);
 var express = require('express');
 // var io = require('socket.io');
 var apicache = require('apicache');
@@ -32,7 +31,7 @@ SwaggerExpress.create(config, function(err, swaggerExpress) {
   });
 
   app.use(basePath+'/docs', express.static(pathToSwaggerUi));
-  app.use(basePath+'/d3', express.static('/Users/olson/src/ajo2995/genetrees/d3'));
+  app.use(basePath+'/d3', express.static(__dirname + '/d3'));
 
   // install middleware
   swaggerExpress.register(app);
