@@ -166,7 +166,7 @@
 
   // Set the color of each node by recursively inheriting.
   function setColor(d) {
-    var taxonId = d.data.taxonId_i;
+    var taxonId = d.data.taxonId;
     d.color = color.domain().indexOf(taxonId) >= 0 ? color(taxonId) : d.parent ? d.parent.color : null;
     if (d.children) d.children.forEach(setColor);
   }

@@ -27,7 +27,7 @@ var internalNodeQuery = 'SELECT\n' +
   ' gtna.node_type as nodeType,\n' +
   ' gtna.bootstrap as bootstrap,\n' +
   ' gtna.duplication_confidence_score as duplicationConfidenceScore,\n' +
-  ' stn.taxon_id as taxonId_i\n' +
+  ' stn.taxon_id as taxonId\n' +
   'FROM\n' +
   ' gene_tree_node gtn,\n' +
   ' gene_tree_node_attr gtna,\n' +
