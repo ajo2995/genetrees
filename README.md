@@ -17,5 +17,5 @@ You will also need an Apache Solr instance populated with gene trees
 4. $SOLR_ROOT/bin/solr start -p 8983 -m 4g
 5. open http://localhost:8983/solr
 6. click Core Admin, then Add Core, then write "compara_90" in the name and instanceDir fields
-7. node database/compara.js -h ensembldb.ensembl.org -u anonymout -d ensembl_compara_90 -s http://localhost:8983/solr/compara_90
+7. node database/compara.js -h ensembldb.ensembl.org -u anonymous -d ensembl_compara_90 -s http://localhost:8983/solr/compara_90
 ```
