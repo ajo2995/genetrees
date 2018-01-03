@@ -142,15 +142,9 @@ definitions:
       -
         required:
           - treeId
-          - treeType
         properties:
           treeId:
             type: string
-          treeType:
-            type: string
-            enum:
-              - 'geneTree'
-              - 'speciesTree'
 
   TreeNode:
     allOf:

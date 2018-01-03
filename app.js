@@ -3,7 +3,6 @@
 var SwaggerExpress = require('swagger-express-mw');
 var pathToSwaggerUi = require('swagger-ui-dist').absolutePath();
 var express = require('express');
-// var io = require('socket.io');
 var apicache = require('apicache');
 var redis = require('redis');
 
@@ -41,20 +40,4 @@ SwaggerExpress.create(config, function(err, swaggerExpress) {
   if (server) {
     console.log('tree service is listening on port '+port);
   }
-
-  // var myio = io.listen(server);
-  // var chat = myio.of('/chat');
-  // chat.on('connection', function (socket) {
-  //   console.log('a user connected');
-  //   socket.on('disconnect', function() {
-  //     console.log('a user disconnected');
-  //   });
-  //   socket.on('chat message', function(msg) {
-  //     console.log('message: ' + msg);
-  //     socket.emit('message', {message: msg});
-  //     setTimeout(function() {
-  //       socket.emit('message', {message: msg.toUpperCase() + '!!!'});
-  //     }, 10000);
-  //   });
-  // });
 });

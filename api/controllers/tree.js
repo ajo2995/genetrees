@@ -33,36 +33,44 @@ function getTree(req, res) {
   // variables defined in the Swagger document can be referenced using req.swagger.params.{parameter_name}
   var setId = req.swagger.params.setId.value;
   var treeId = req.swagger.params.treeId.value;
-  var filter = req.swagger.params.filter || '';
-  var subtree = req.swagger.params.subtree || '';
+  var filter = req.swagger.params.filter.value || '';
+  var subtree = req.swagger.params.subtree.value || 0;
 
   // get the url for the solr instance with setId trees
-  var url = 'http://localhost:8983/solr/'+setId+'/query';
+  var url = 'http://localhost:8983/solr/'+setId+'/query?rows=10000&q=';
   // build a query for the given tree
-  url += '?rows=3000&q=treeId:'+treeId;
+  var solrQuery = 'treeId:'+treeId;
   // possibly apply filters and subtree
   if (filter) {
-
+    solrQuery = '{!graph from=nodeId to=parentId}' + solrQuery + ' AND ' + filter;
   }
   if (subtree) {
-
+    solrQuery += ' AND {!graph from=parentId to=nodeId}nodeId:'+subtree;
   }
   // run the query
-  request(url, function(err, response, body) {
+  request(url + solrQuery, function(err, response, body) {
     if (err) {
       res.json({error: err});
     }
     // assemble the tree from the matching solr docs
-    // send the json response
-    // cache the response - unless handled by middleware
+    // send the tree
+    // cache the response - handled by middleware
     var nodes = JSON.parse(body).response.docs;
-    // move this logic into the build script
-    nodes.forEach(function(node) {
-      if (node.nodeId === node.rootId) {
-        delete node.parentId;
-        node.treeType = 'geneTree';
+    if (subtree && !filter) {
+      // remove the parentId on the subtree root node so flatToNested works
+      nodes.forEach(function(n) {
+        if (n.nodeId === subtree) {
+          delete n.parentId;
+        }
+      });
+    }
+    var tree = flatToNested.convert(nodes);
+    if (subtree && filter) {
+      // skip over ancestors of the subtree root
+      while (tree.nodeId !== subtree) {
+        tree = tree.children[0];
       }
-    });
-    res.json(flatToNested.convert(nodes));
+    }
+    res.json(tree);
   });
 }

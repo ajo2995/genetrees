@@ -78,7 +78,10 @@ var leafNodeQuery = 'SELECT\n' +
   ' gam.seq_member_id = gtn.seq_member_id';
 
 var tidyRow = through2.obj(function (row, encoding, done) {
-  row.id = row.treeId_s + "_" + row.nodeId_i; // because we need a unique id for solr to be happy?
+  row.id = row.treeId + "_" + row.nodeId; // because we need a unique id for solr to be happy?
+  if (row.nodeId === row.rootId) {
+    delete row.parentId;
+  }
   this.push(_.omitBy(row, _.isNull));
   done();
 });
@@ -110,7 +113,6 @@ comparaDb.query(geneOrderQuery, function(err, rows) {
   });
 
   var addRank = through2.obj(function (row, encoding, done) {
-    row.id = row.treeId + "_" + row.nodeId; // because we need a unique id for solr to be happy?
     if (row.gene_member_id) {
       var rank = geneRank[row.gene_member_id];
       row.geneRank = [rank];
