@@ -62,7 +62,7 @@ paths:
         - name: setId
           in: query
           type: string
-          description: eg39
+          description: try 'compara_pan_91'
           required: true
         - name: q
           in: query

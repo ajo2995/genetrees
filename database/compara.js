@@ -27,7 +27,8 @@ var internalNodeQuery = 'SELECT\n' +
   ' gtna.node_type as nodeType,\n' +
   ' gtna.bootstrap as bootstrap,\n' +
   ' gtna.duplication_confidence_score as duplicationConfidenceScore,\n' +
-  ' stn.taxon_id as taxonId\n' +
+  ' stn.taxon_id as taxonId,\n' +
+  ' stn.node_name as taxonName\n' +
   'FROM\n' +
   ' gene_tree_node gtn,\n' +
   ' gene_tree_node_attr gtna,\n' +
@@ -49,6 +50,7 @@ var leafNodeQuery = 'SELECT\n' +
   ' sm.display_label as proteinName,\n' +
   ' sm.description as proteinDescription,\n' +
   ' sm.taxon_id as taxonId,\n' +
+  ' gdb.display_name as taxonName,\n' +
   ' gm.gene_member_id,\n' +
   ' gm.stable_id as geneId,\n' +
   ' gm.description as geneDescription,\n' +
@@ -63,6 +65,7 @@ var leafNodeQuery = 'SELECT\n' +
   ' gene_tree_node gtn,\n' +
   ' gene_tree_root gtr,\n' +
   ' seq_member sm,\n' +
+  ' genome_db gdb,\n' +
   ' sequence sq,\n' +
   ' gene_member gm,\n' +
   ' dnafrag d,\n' +
@@ -71,15 +74,30 @@ var leafNodeQuery = 'SELECT\n' +
   ' gtr.stable_id IS NOT NULL and\n' +
   ' gtn.root_id = gtr.root_id and\n' +
   ' gtn.seq_member_id = sm.seq_member_id and\n' +
+  ' sm.genome_db_id = gdb.genome_db_id and\n' +
   ' sm.sequence_id = sq.sequence_id and\n' +
   ' sm.gene_member_id = gm.gene_member_id and\n' +
   ' gm.dnafrag_id = d.dnafrag_id and\n' +
   ' gtr.gene_align_id = gam.gene_align_id and\n' +
   ' gam.seq_member_id = gtn.seq_member_id';
 
+var speciesTreeQuery = 'SELECT\n' +
+  ' str.root_id as treeId,\n' +
+  ' stn.node_id as nodeId,\n' +
+  ' stn.parent_id as parentId,\n' +
+  ' stn.root_id as rootId,\n' +
+  ' stn.distance_to_parent as distanceToParent,\n' +
+  ' stn.node_name as taxonName,\n' +
+  ' stn.taxon_id as taxonId\n' +
+  'FROM\n' +
+  ' species_tree_root str,\n' +
+  ' species_tree_node stn\n' +
+  'WHERE\n' +
+  ' str.root_id = stn.root_id';
+
 var tidyRow = through2.obj(function (row, encoding, done) {
   row.id = row.treeId + "_" + row.nodeId; // because we need a unique id for solr to be happy?
-  if (row.nodeId === row.rootId) {
+  if (row.nodeId === row.rootId && row.parentId) {
     delete row.parentId;
   }
   this.push(_.omitBy(row, _.isNull));
@@ -126,8 +144,8 @@ comparaDb.query(geneOrderQuery, function(err, rows) {
     done();
   });
 
-  comparaDb.query(internalNodeQuery + '; ' + leafNodeQuery)
-    .stream({highWaterMark: 100})
+  comparaDb.query(internalNodeQuery + '; ' + leafNodeQuery + '; ' + speciesTreeQuery)
+    .stream()
     .pipe(tidyRow)
     .pipe(addRank)
     .pipe(createSolrStream(solrUrl))

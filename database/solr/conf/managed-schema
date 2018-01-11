@@ -450,6 +450,7 @@
   <field name="parentId" type="pint" multiValued="false" indexed="true" stored="true"/>
   <field name="rootId" type="pint" multiValued="false" indexed="true" stored="true"/>
   <field name="taxonId" type="pint" multiValued="false" indexed="true" stored="true"/>
+  <field name="taxonName" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="nodeType" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="bootstrap" type="pint" multiValued="false" indexed="false" stored="true"/>
   <field name="duplicationConfidenceScore" type="pfloat" multiValued="false" indexed="false" stored="true"/>

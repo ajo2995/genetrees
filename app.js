@@ -8,7 +8,7 @@ var redis = require('redis');
 
 var app = express();
 var cache = apicache.options({redisClient: redis.createClient()}).middleware;
-app.use(cache('1 hour'));
+// app.use(cache('1 hour'));
 
 module.exports = app; // for testing
 

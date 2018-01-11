@@ -25,7 +25,7 @@
     }
 
     .labels {
-        font: 10px sans-serif;
+        font: 12px sans-serif;
     }
 
     .link--active {
@@ -51,12 +51,18 @@
 <script>
   var url = window.location.href.replace(/d3/,'tree');
 
-  var outerRadius = 960 / 2,
-    innerRadius = outerRadius - 170;
+  var outerRadius = 900 / 2,
+    innerRadius = outerRadius - 180;
 
   var color = d3.scaleOrdinal()
-    .domain([4447, 71240, 359160])
+    .domain([33154, 3398, 1437201, 2759])
     .range(d3.schemeCategory10);
+
+  var taxLabel = [];
+  taxLabel[33154] = 'Outgroups';
+  taxLabel[3398] = 'Monocots';
+  taxLabel[1437201] = 'Dicots';
+  taxLabel[2759] = 'Lower plants';
 
   var cluster = d3.cluster()
     .size([360, innerRadius])
@@ -84,7 +90,7 @@
     .attr("y", 9)
     .attr("dy", ".35em")
     .attr("text-anchor", "end")
-    .text(function(d) { return d; });
+    .text(function(d) { return taxLabel[d]; });
 
   var chart = svg.append("g")
     .attr("transform", "translate(" + outerRadius + "," + outerRadius + ")");
@@ -129,7 +135,7 @@
       .attr("dy", ".31em")
       .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + (innerRadius + 4) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); })
       .attr("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
-      .text(function(d) { var label = d.data.geneName || d.data.geneId; return label + ' ' + d.data.taxonId })
+      .text(function(d) { var label = d.data.geneName || d.data.geneId || ''; return label + ' ' + d.data.taxonName })
       .on("mouseover", mouseovered(true))
       .on("mouseout", mouseovered(false));
 
