@@ -9,6 +9,7 @@ var argv = require('minimist')(process.argv.slice(2));
 var comparaDb = mysql.createConnection({
   host: argv.h,
   user: argv.u,
+  port: argv.t || 3306,
   password: argv.p,
   database: argv.d,
   multipleStatements: true

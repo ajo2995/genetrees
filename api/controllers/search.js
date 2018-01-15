@@ -28,6 +28,7 @@ function search(req, res) {
   var query = req.swagger.params.q.value || '*:*';
   var setId = req.swagger.params.setId.value || '';
   var url = 'http://localhost:8983/solr/'+setId+'/query?q='+query;
+  //console.log(url);
   request(url, function(err, response, body) {
     if (err) {
       res.json({error: err});

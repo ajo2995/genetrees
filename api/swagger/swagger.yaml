@@ -3,7 +3,8 @@ info:
   version: "0.0.1"
   title: Tree DB
 # during dev, should point to your local machine
-host: localhost:10010
+host: www.genetrees.org
+# host: localhost:10010
 # basePath prefixes all resource paths 
 basePath: /api/v1
 # 

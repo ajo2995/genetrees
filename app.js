@@ -8,7 +8,7 @@ var redis = require('redis');
 
 var app = express();
 var cache = apicache.options({redisClient: redis.createClient()}).middleware;
-// app.use(cache('1 hour'));
+app.use(cache('1 hour'));
 
 module.exports = app; // for testing
 
@@ -26,7 +26,7 @@ SwaggerExpress.create(config, function(err, swaggerExpress) {
   });
 
   app.get(basePath, function(req, res) {
-    res.redirect(basePath+'/docs?url='+basePath+'/swagger');
+    res.redirect(basePath+'/docs?url=http://www.genetrees.org/'+basePath+'/swagger');
   });
 
   app.use(basePath+'/docs', express.static(pathToSwaggerUi));
