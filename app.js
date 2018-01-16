@@ -26,7 +26,7 @@ SwaggerExpress.create(config, function(err, swaggerExpress) {
   });
 
   app.get(basePath, function(req, res) {
-    res.redirect(basePath+'/docs?url=http://www.genetrees.org/'+basePath+'/swagger');
+    res.redirect(basePath+'/docs?url=http://www.genetrees.org'+basePath+'/swagger');
   });
 
   app.use(basePath+'/docs', express.static(pathToSwaggerUi));
