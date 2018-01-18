@@ -17,8 +17,8 @@ var comparaDb = mysql.createConnection({
 
 var solrUrl = argv.s;
 
-var geneOrderQuery = 'SELECT gene_member_id from gene_member order by genome_db_id, dnafrag_id, dnafrag_start';
-
+var geneOrderQuery = 'SELECT gene_member_id, taxon_id from gene_member order by genome_db_id, dnafrag_id, dnafrag_start';
+var taxonomyQuery = 'SELECT taxon_id, parent_id from ncbi_taxa_node';
 var internalNodeQuery = 'SELECT\n' +
   ' gtr.stable_id as treeId,\n' +
   ' gtn.node_id as nodeId,\n' +
@@ -53,6 +53,7 @@ var leafNodeQuery = 'SELECT\n' +
   ' sm.taxon_id as taxonId,\n' +
   ' gdb.display_name as taxonName,\n' +
   ' gm.gene_member_id,\n' +
+  ' gm.biotype_group as nodeType,\n' +
   ' gm.stable_id as geneId,\n' +
   ' gm.description as geneDescription,\n' +
   ' gm.display_label as geneName,\n' +
@@ -127,33 +128,59 @@ comparaDb.query(geneOrderQuery, function(err, rows) {
   }
   console.error('finished geneOrderQuery');
   var geneRank = [];
+  var leafTaxon = [];
   rows.forEach(function(row, idx) {
     geneRank[row.gene_member_id] = idx;
+    leafTaxon[row.taxon_id] = 1;
   });
 
-  var addRank = through2.obj(function (row, encoding, done) {
-    if (row.gene_member_id) {
-      var rank = geneRank[row.gene_member_id];
-      row.geneRank = [rank];
-      row.geneNeighbors = [];
-      for(var i=rank - 10; i < rank + 10; i++) {
-        row.geneNeighbors.push(i);
-      }
-      delete row.gene_member_id;
+  comparaDb.query(taxonomyQuery, function(err, rows) {
+    if (err) {
+      throw err;
     }
-    this.push(row);
-    done();
-  });
-
-  comparaDb.query(internalNodeQuery + '; ' + leafNodeQuery + '; ' + speciesTreeQuery)
-    .stream()
-    .pipe(tidyRow)
-    .pipe(addRank)
-    .pipe(createSolrStream(solrUrl))
-    .on('end', function() {
-      console.log('all tree nodes are in the solr database now.');
-      comparaDb.end(function(err) {
-        console.error('closed mysql connection');
-      })
+    console.error('finished taxonomyQuery');
+    var parent = [];
+    rows.forEach(function(row) {
+      parent[row.taxon_id] = row.parent_id;
     });
+    var ancestors = [];
+    Object.keys(leafTaxon).forEach(function(leafStr) {
+      var leaf = +leafStr;
+      ancestors[leaf] = [leaf];
+      var node = parent[leaf];
+      while(node > 0) {
+        ancestors[leaf].push(node);
+        node = parent[node];
+      }
+    });
+    console.error('finished building taxonomy ancestors list');
+
+    var addRank = through2.obj(function (row, encoding, done) {
+      if (row.gene_member_id) {
+        var rank = geneRank[row.gene_member_id];
+        row.geneRank = [rank];
+        row.geneNeighbors = [];
+        for(var i=rank - 10; i < rank + 10; i++) {
+          row.geneNeighbors.push(i);
+        }
+        row.taxonAncestors = ancestors[row.taxonId];
+        delete row.gene_member_id;
+      }
+
+      this.push(row);
+      done();
+    });
+
+    comparaDb.query(internalNodeQuery + '; ' + leafNodeQuery + '; ' + speciesTreeQuery)
+      .stream()
+      .pipe(tidyRow)
+      .pipe(addRank)
+      .pipe(createSolrStream(solrUrl))
+      .on('end', function() {
+        console.log('all tree nodes are in the solr database now.');
+        comparaDb.end(function(err) {
+          console.error('closed mysql connection');
+        })
+      });
+  });
 });
