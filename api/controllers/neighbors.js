@@ -31,7 +31,7 @@ function getNeighbors(req, res) {
 
   // get the url for the solr instance with setId trees
   var url = 'http://localhost:8983/solr/'+setId+'/query?rows=20000';
-  url += '&fl=treeId,gene*';
+  url += '&fl=treeId,nodeType,gene*';
   // build a query for the given tree
   var solrQuery = '&q={!graph from=geneNeighbors to=geneRank maxDepth=1}treeId:'+treeId;
   solrQuery += ' AND geneRank:[* TO *]';
@@ -48,9 +48,23 @@ function getNeighbors(req, res) {
     var geneByRank = {};
     nodes.forEach(function(n) {
       var rank = n.geneRank[0];
-      delete n.geneNeighbors;
-      delete n.geneRank;
-      geneByRank[rank] = n;
+      geneByRank[rank] = {
+        treeId: n.treeId,
+        biotype: n.nodeType,
+        geneId: n.geneId,
+        location: {
+          region: n.geneRegion,
+          start: n.geneStart,
+          end: n.geneEnd,
+          strand: n.geneStrand
+        }
+      };
+      if (n.geneName) {
+        geneByRank[rank].geneName = n.geneName;
+      }
+      if (n.geneDescription) {
+        geneByRank[rank].geneDescription = n.geneDescription;
+      }
     });
     res.json(geneByRank);
   });
