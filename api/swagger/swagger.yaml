@@ -119,6 +119,38 @@ paths:
           description: Error
           schema:
             $ref: "#/definitions/ErrorResponse"
+  /neighbors:
+    x-swagger-router-controller: neighbors
+    get:
+      tags:
+        - neighbors
+      description: Return the neighbors of genes in a tree
+      operationId: getNeighbors
+      parameters:
+      - name: setId
+        in: query
+        description: Identifier for the tree set
+        required: true
+        type: string
+      - name: treeId
+        in: query
+        description: Identifier for the tree
+        required: true
+        type: string
+      - name: filter
+        in: query
+        description: filter on leaf nodes
+        type: string
+        required: false
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: "#/definitions/NeighborsResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
   /swagger:
     x-swagger-pipe: swagger_raw
 # complex objects have schema definitions
@@ -136,6 +168,9 @@ definitions:
     properties:
       treeId:
         type: string
+
+  NeighborsResponse:
+    type: object
 
   TreeResponse:
     allOf:

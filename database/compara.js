@@ -17,7 +17,7 @@ var comparaDb = mysql.createConnection({
 
 var solrUrl = argv.s;
 
-var geneOrderQuery = 'SELECT gene_member_id, taxon_id from gene_member order by genome_db_id, dnafrag_id, dnafrag_start';
+var geneOrderQuery = 'SELECT gene_member_id, taxon_id, dnafrag_id from gene_member order by genome_db_id, dnafrag_id, dnafrag_start';
 var taxonomyQuery = 'SELECT taxon_id, parent_id from ncbi_taxa_node';
 var internalNodeQuery = 'SELECT\n' +
   ' gtr.stable_id as treeId,\n' +
@@ -57,6 +57,7 @@ var leafNodeQuery = 'SELECT\n' +
   ' gm.stable_id as geneId,\n' +
   ' gm.description as geneDescription,\n' +
   ' gm.display_label as geneName,\n' +
+  ' gm.dnafrag_id,\n' +
   ' gm.dnafrag_start as geneStart,\n' +
   ' gm.dnafrag_end as geneEnd,\n' +
   ' gm.dnafrag_strand as geneStrand,\n' +
@@ -122,23 +123,36 @@ function createSolrStream(url) {
   return duplexer(jsonStreamStringify, postRequest);
 }
 
+console.error('geneOrderQuery started');
 comparaDb.query(geneOrderQuery, function(err, rows) {
   if (err) {
     throw err;
   }
-  console.error('finished geneOrderQuery');
+  console.error('geneOrderQuery finished');
   var geneRank = [];
   var leafTaxon = [];
+  var dnaFragBounds = [];
   rows.forEach(function(row, idx) {
     geneRank[row.gene_member_id] = idx;
     leafTaxon[row.taxon_id] = 1;
+    if (!dnaFragBounds[row.dnafrag_id]) {
+      dnaFragBounds[row.dnafrag_id] = {
+        start: idx,
+        end: idx
+      }
+    }
+    else {
+      dnaFragBounds[row.dnafrag_id].end = idx;
+    }
   });
+  console.error('geneOrderQuery postprocessed');
 
+  console.error('taxonomyQuery started');
   comparaDb.query(taxonomyQuery, function(err, rows) {
     if (err) {
       throw err;
     }
-    console.error('finished taxonomyQuery');
+    console.error('taxonomyQuery finished');
     var parent = [];
     rows.forEach(function(row) {
       parent[row.taxon_id] = row.parent_id;
@@ -153,14 +167,17 @@ comparaDb.query(geneOrderQuery, function(err, rows) {
         node = parent[node];
       }
     });
-    console.error('finished building taxonomy ancestors list');
+    console.error('taxonomyQuery prostprocessed');
 
     var addRank = through2.obj(function (row, encoding, done) {
       if (row.gene_member_id) {
         var rank = geneRank[row.gene_member_id];
         row.geneRank = [rank];
         row.geneNeighbors = [];
-        for(var i=rank - 10; i < rank + 10; i++) {
+        var minRank = Math.max(rank - 10, dnaFragBounds[row.dnafrag_id].start);
+        var maxRank = Math.min(rank + 10, dnaFragBounds[row.dnafrag_id].end);
+        delete row.dnafrag_id;
+        for(var i=minRank; i < maxRank; i++) {
           row.geneNeighbors.push(i);
         }
         row.taxonAncestors = ancestors[row.taxonId];
@@ -171,6 +188,7 @@ comparaDb.query(geneOrderQuery, function(err, rows) {
       done();
     });
 
+    console.error('tree queries started');
     comparaDb.query(internalNodeQuery + '; ' + leafNodeQuery + '; ' + speciesTreeQuery)
       .stream()
       .pipe(tidyRow)
