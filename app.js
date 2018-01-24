@@ -5,8 +5,19 @@ var pathToSwaggerUi = require('swagger-ui-dist').absolutePath();
 var express = require('express');
 var apicache = require('apicache');
 var redis = require('redis');
+var winston = require('winston');
+var expressWinston = require('express-winston');
+require('winston-loggly-bulk');
 
 var app = express();
+app.use(expressWinston.logger({
+  transports: [ new winston.transports.Loggly({
+    token: "be657a51-a20e-43f4-aee9-bc3584bfb812",
+    subdomain: "ajo2995",
+    tags: ["Winston-NodeJS"],
+    json:true
+  }) ]
+}));
 var cache = apicache.options({redisClient: redis.createClient()}).middleware;
 app.use(cache('1 hour'));
 
