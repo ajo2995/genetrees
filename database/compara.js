@@ -25,6 +25,7 @@ var internalNodeQuery = 'SELECT\n' +
   ' gtn.parent_id as parentId,\n' +
   ' gtn.root_id as rootId,\n' +
   ' gtn.distance_to_parent as distanceToParent,\n' +
+  ' gtn.left_index as leftIndex,\n' +
   ' gtna.node_type as nodeType,\n' +
   ' gtna.bootstrap as bootstrap,\n' +
   ' gtna.duplication_confidence_score as duplicationConfidenceScore,\n' +
@@ -47,6 +48,7 @@ var leafNodeQuery = 'SELECT\n' +
   ' gtn.parent_id as parentId,\n' +
   ' gtn.root_id as rootId,\n' +
   ' gtn.distance_to_parent as distanceToParent,\n' +
+  ' gtn.left_index as leftIndex,\n' +
   ' sm.stable_id as proteinId,\n' +
   ' sm.display_label as proteinName,\n' +
   ' sm.description as proteinDescription,\n' +
@@ -90,6 +92,7 @@ var speciesTreeQuery = 'SELECT\n' +
   ' stn.parent_id as parentId,\n' +
   ' stn.root_id as rootId,\n' +
   ' stn.distance_to_parent as distanceToParent,\n' +
+  ' stn.left_index as leftIndex,\n' +
   ' stn.node_name as taxonName,\n' +
   ' stn.taxon_id as taxonId\n' +
   'FROM\n' +

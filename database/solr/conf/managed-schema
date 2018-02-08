@@ -449,6 +449,7 @@
   <field name="nodeId" type="pint" multiValued="false" indexed="true" stored="true"/>
   <field name="parentId" type="pint" multiValued="false" indexed="true" stored="true"/>
   <field name="rootId" type="pint" multiValued="false" indexed="true" stored="true"/>
+  <field name="leftIndex" type="pint" multiValued="false" indexed="true" stored="true"/>
   <field name="taxonId" type="pint" multiValued="false" indexed="true" stored="true"/>
   <field name="taxonName" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="taxonAncestors" type="pint" multiValued="true" indexed="true" stored="true"/>
