@@ -5,10 +5,12 @@ var pathToSwaggerUi = require('swagger-ui-dist').absolutePath();
 var express = require('express');
 var apicache = require('apicache');
 var redis = require('redis');
+var cors = require('cors');
 
 var app = express();
 var cache = apicache.options({redisClient: redis.createClient()}).middleware;
 app.use(cache('1 hour'));
+app.use(cors());
 
 module.exports = app; // for testing
 
