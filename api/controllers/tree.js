@@ -48,6 +48,7 @@ function getTree(req, res) {
     solrQuery += ' AND {!graph from=parentId to=nodeId}nodeId:'+subtree;
   }
   // run the query
+  console.error(url + solrQuery);
   request(url + solrQuery, function(err, response, body) {
     if (err) {
       res.json({error: err});
@@ -56,6 +57,12 @@ function getTree(req, res) {
     // send the tree
     // cache the response - handled by middleware
     var nodes = JSON.parse(body).response.docs;
+    nodes.forEach(function(n) {
+      if (n.interpro_x) {
+        n.interpro = JSON.parse(n.interpro_x);
+        delete n.interpro_x;
+      }
+    });
     if (subtree && !filter) {
       // remove the parentId on the subtree root node so flatToNested works
       nodes.forEach(function(n) {

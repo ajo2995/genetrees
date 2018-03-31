@@ -5,6 +5,19 @@ var duplexer = require('duplexer');
 var request = require('request');
 var mysql = require('mysql');
 var argv = require('minimist')(process.argv.slice(2));
+var Q = require('q');
+
+function getRedis(db) {
+  var deferred = Q.defer();
+  var client = require('redis').createClient();
+  client.select(db, function(err) {
+    if (err) throw err;
+    console.error('redis connection established');
+    deferred.resolve(client);
+  });
+  return deferred.promise;
+}
+var redisPromise = getRedis(1);
 
 var comparaDb = mysql.createConnection({
   host: argv.h,
@@ -191,17 +204,43 @@ comparaDb.query(geneOrderQuery, function(err, rows) {
       done();
     });
 
+    var addInterpro = through2.obj(function (row, encoding, done) {
+      if (row.proteinId) {
+        var that = this;
+        redisPromise.then(function(client) {
+          client.get(row.proteinId, function (err, domains) {
+            if (err) {
+              throw err;
+            }
+            if (domains) {
+              row.interpro_x = domains;
+            }
+            that.push(row);
+            done();
+          });
+        });
+      }
+      else {
+        this.push(row);
+        done();
+      }
+    });
+
     console.error('tree queries started');
     comparaDb.query(internalNodeQuery + '; ' + leafNodeQuery + '; ' + speciesTreeQuery)
       .stream()
       .pipe(tidyRow)
       .pipe(addRank)
+      .pipe(addInterpro)
       .pipe(createSolrStream(solrUrl))
       .on('end', function() {
         console.log('all tree nodes are in the solr database now.');
         comparaDb.end(function(err) {
           console.error('closed mysql connection');
-        })
+          redisPromise.then(function(client) {
+            client.quit();
+          });
+        });
       });
   });
 });

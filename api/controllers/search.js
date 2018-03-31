@@ -35,7 +35,14 @@ function search(req, res) {
     }
     response = JSON.parse(body).response;
     if (response) {
-      res.json(response.docs);
+      var results = response.docs.map(function(doc) {
+        if (doc.hasOwnProperty('interpro_x')) {
+          doc.interpro = JSON.parse(doc.interpro_x);
+          delete doc.interpro_x;
+        }
+        return doc;
+      });
+      res.json(results);
     }
     else {
       res.json([]);
