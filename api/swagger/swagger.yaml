@@ -201,12 +201,6 @@ definitions:
     properties:
       nodeType:
         type: string
-        enum:
-          - "duplication"
-          - "speciation"
-          - "dubious"
-          - "gene_split"
-          - "other"
       bootstrap:
         type: integer
         minimum: 0
