@@ -1,10 +1,8 @@
 var _ = require('lodash');
-var through2 = require('through2');
 var JSONStream = require('JSONStream');
 var duplexer = require('duplexer');
 var request = require('request');
 var argv = require('minimist')(process.argv.slice(2));
-var Q = require('q');
 var fs = require('fs');
 var XmlStream = require('xml-stream');
 var spigot = require('stream-spigot');
@@ -101,12 +99,3 @@ require('readline').createInterface({
        });
   });
 });
-
-
-// .pipe(createSolrStream(solrUrl))
-// .on('end', function() {
-//   console.log('all tree nodes are in the solr database now.');
-//   comparaDb.end(function(err) {
-//     console.error('closed mysql connection');
-//   });
-// });

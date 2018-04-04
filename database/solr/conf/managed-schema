@@ -508,4 +508,7 @@
   <copyField source="geneId" dest="text"/>
   <copyField source="geneName" dest="text"/>
   <copyField source="geneDescription" dest="text"/>
+  <copyField source="id" dest="text"/>
+  <copyField source="nodeName" dest="text"/>
+  <copyField source="nodeDescription" dest="text"/>
 </schema>
