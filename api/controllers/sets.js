@@ -50,7 +50,7 @@ function getSets(req, res) {
     date: '2017-07-21'
   },
   {
-    setId: 'compara_90',
+    setId: 'intepro_67',
     date: '2017-07-21'
   }
 ]);
