@@ -27,7 +27,8 @@ function search(req, res) {
   // variables defined in the Swagger document can be referenced using req.swagger.params.{parameter_name}
   var query = req.swagger.params.q.value || '*:*';
   var setId = req.swagger.params.setId.value || '';
-  var url = 'http://localhost:8983/solr/'+setId+'/query?q='+query;
+  var rows = req.swagger.params.rows.value || 10;
+  var url = 'http://localhost:8983/solr/'+setId+'/query?q='+query+'&rows='+rows;
   //console.log(url);
   request(url, function(err, response, body) {
     if (err) {

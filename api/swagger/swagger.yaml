@@ -69,6 +69,11 @@ paths:
           in: query
           type: string
           description: try 'geneId:AT1G32900'
+        - name: rows
+          in: query
+          type: number
+          description: number of rows
+          default: 10
       responses:
         "200":
           description: Success
