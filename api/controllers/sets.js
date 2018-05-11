@@ -54,8 +54,8 @@ function getSets(req, res) {
     date: '2017-07-21'
   },
   {
-    setId: 'interpro_67',
-    date: '2017-07-21'
+    setId: 'panther_test',
+    date: '2018-05-11'
   }
 ]);
 }
