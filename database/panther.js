@@ -75,7 +75,7 @@ request({
         id: `${bookId}_${bookNode.accession._text}`,
         nodeId: bookIntId + accessionIntId,
         nodeName: bookNode.sf_name._text,
-        nodeType: bookNode.node_type ? bookNode.node_type._text : 'SPECIATION',
+        nodeType: bookNode.node_type ? bookNode.node_type._text.toLowerCase() : 'speciation',
         distanceToParent: +bookNode.branch_length._text,
         taxonName: bookNode.species
           ? bookNode.species._text
