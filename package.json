@@ -27,6 +27,7 @@
     "duplexer": "^0.1.1",
     "minimist": "^1.2.0",
     "mysql": "^2.15.0",
+    "readline": "^1.3.0",
     "should": "^7.1.0",
     "supertest": "^1.0.0",
     "through2": "^2.0.3"

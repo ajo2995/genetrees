@@ -13,8 +13,9 @@ function redisify() {
 }
 
 console.log(redisify('SELECT','2'));
-
+console.log(redisify('FLUSHDB'));
 var generifs_basic = argv.g;
+var rifs = {};
 require('readline').createInterface({
   input: fs.createReadStream(generifs_basic),
   terminal: false
@@ -23,9 +24,17 @@ require('readline').createInterface({
   if (line.charAt(0) !== "#") {
     var key = cols[1];
     var val = {
-      pubmed: cols[2],
+      pubmed: cols[2].split(',').map(function(pubmed) {return +pubmed}),
       geneRIF: cols[4]
     }
-    console.log(redisify('SET',key,JSON.stringify(val)));
+    if (!rifs.hasOwnProperty(key)) {
+      rifs[key] = [];
+    }
+    rifs[key].push(val);
+    // console.log(redisify('SET',key,JSON.stringify(val)));
   }
+}).on('close', function() {
+  Object.keys(rifs).forEach(function(key) {
+    console.log(redisify('SET',key,JSON.stringify(rifs[key])));
+  });
 });

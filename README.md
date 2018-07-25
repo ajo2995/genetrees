@@ -20,9 +20,14 @@ You will also need an Apache Solr instance populated with gene trees
 7. node database/compara.js -h ensembldb.ensembl.org -u anonymous -d ensembl_compara_90 -s http://localhost:8983/solr/compara_90
 ```
 
-If you want to have interpro annotations integrated into the tree leaf nodes, run getInterproCommands.js on the relevant ensembl mysql db host.
-The key params are -h <host> -u <user> -p <password> -t <port> -e <ensembl version> -g <gramene/ensemblGenomes version>
+If you want to have interpro annotations integrated into the tree leaf nodes, run getCoreDBCommands.js on the relevant ensembl mysql db host.
+The key params are -h <host> -u <user> -p <password> -t <port> -e <ensembl version> -g <gramene/ensemblGenomes version> -s <script (loadInterpro.js)>
 You need to have a redis server running on the default port (also used for web cache)
 Interpro annotations are stored in a redis cache (key is proteinId, value is JSON list of domains)
 They get loaded into the solr core in a dynamic field called interpro_x which is parsed into a nested structure by the tree and search controllers of the web service.
+
+Experimenting with adding GeneRIFs too.
+geneRIFs.js will populate a redis db with the generifs_basic data (key EntrezGene id, value is a list of GeneRIFs)
+loadEntrezGene.js finds any EntrezGene xrefs and looks for associated GeneRIFs. populates another redis db with ensembl stable id keys
+
 

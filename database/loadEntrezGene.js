@@ -46,19 +46,26 @@ connection.query(sql, function(err, rows) {
   if (err) {
     throw err;
   }
-  var annotations = {};
   console.log(redisify('SELECT','3'));
-  rows.forEach(function(row) {
-    var ensemblGene = row.stable_id;
-    var entrezGene = row.dbprimary_acc;
-    // another script (geneRIFs.js) loads the geneRIFs into redis
-    redisPromise.then(function(client) {
+  // another script (geneRIFs.js) loads the geneRIFs into redis
+  redisPromise.then(function(client) {
+    var todo = rows.length;
+    if (todo === 0) {
+      client.quit();
+    }
+    rows.forEach(function(row) {
+      var ensemblGene = row.stable_id;
+      var entrezGene = row.dbprimary_acc;
       client.get(entrezGene, function (err, geneRIF) {
+        todo--;
         if (err) {
           throw err;
         }
         if (geneRIF) {
-          console.log(redisify('SET',ensemblGene,JSON.stringify(geneRIF)));
+          console.log(redisify('SET',ensemblGene,geneRIF));
+        }
+        if (todo === 0) {
+          client.quit();
         }
       });
     });

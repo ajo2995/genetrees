@@ -17,7 +17,8 @@ function getRedis(db) {
   });
   return deferred.promise;
 }
-var redisPromise = getRedis(1);
+var interproPromise = getRedis(1);
+var generifsPromise = getRedis(3);
 
 var comparaDb = mysql.createConnection({
   host: argv.h,
@@ -207,7 +208,7 @@ comparaDb.query(geneOrderQuery, function(err, rows) {
     var addInterpro = through2.obj(function (row, encoding, done) {
       if (row.proteinId) {
         var that = this;
-        redisPromise.then(function(client) {
+        interproPromise.then(function(client) {
           client.get(row.proteinId, function (err, domains) {
             if (err) {
               throw err;
@@ -226,6 +227,28 @@ comparaDb.query(geneOrderQuery, function(err, rows) {
       }
     });
 
+    var addGeneRIFs = through2.obj(function (row, encoding, done) {
+      if (row.geneId) {
+        var that = this;
+        generifsPromise.then(function(client) {
+          client.get(row.geneId, function (err, rifs) {
+            if (err) {
+              throw err;
+            }
+            if (rifs) {
+              row.geneRIFs_x = rifs;
+            }
+            that.push(row);
+            done();
+          })
+        })
+      }
+      else {
+        this.push(row);
+        done();
+      }
+    });
+
     console.error('tree queries started');
     comparaDb.query(internalNodeQuery + '; ' + leafNodeQuery + '; ' + speciesTreeQuery)
       .stream()
@@ -237,9 +260,12 @@ comparaDb.query(geneOrderQuery, function(err, rows) {
         console.log('all tree nodes are in the solr database now.');
         comparaDb.end(function(err) {
           console.error('closed mysql connection');
-          redisPromise.then(function(client) {
+          interproPromise.then(function(client) {
             client.quit();
           });
+          generifsPromise.then(function(client) {
+            client.quit();
+          })
         });
       });
   });
