@@ -19,6 +19,7 @@ function getRedis(db) {
 }
 var interproPromise = getRedis(1);
 var generifsPromise = getRedis(3);
+var geneStructurePromise = getRedis(4);
 
 var comparaDb = mysql.createConnection({
   host: argv.h,
@@ -184,7 +185,7 @@ comparaDb.query(geneOrderQuery, function(err, rows) {
         node = parent[node];
       }
     });
-    console.error('taxonomyQuery prostprocessed');
+    console.error('taxonomyQuery postprocessed');
 
     var addRank = through2.obj(function (row, encoding, done) {
       if (row.gene_member_id) {
@@ -249,12 +250,36 @@ comparaDb.query(geneOrderQuery, function(err, rows) {
       }
     });
 
+    var addGeneStructure = through2.obj(function (row, encoding, done) {
+      if (row.geneId) {
+        var that = this;
+        geneStructurePromise.then(function(client) {
+          client.get(row.geneId, function (err, geneStructure) {
+            if (err) {
+              throw err;
+            }
+            if (geneStructure) {
+              row.geneStructure_x = geneStructure;
+            }
+            that.push(row);
+            done();
+          })
+        })
+      }
+      else {
+        this.push(row);
+        done();
+      }
+    });
+
     console.error('tree queries started');
     comparaDb.query(internalNodeQuery + '; ' + leafNodeQuery + '; ' + speciesTreeQuery)
       .stream()
       .pipe(tidyRow)
       .pipe(addRank)
       .pipe(addInterpro)
+      .pipe(addGeneRIFs)
+      .pipe(addGeneStructure)
       .pipe(createSolrStream(solrUrl))
       .on('end', function() {
         console.log('all tree nodes are in the solr database now.');
@@ -264,6 +289,9 @@ comparaDb.query(geneOrderQuery, function(err, rows) {
             client.quit();
           });
           generifsPromise.then(function(client) {
+            client.quit();
+          });
+          geneStructurePromise.then(function(client) {
             client.quit();
           })
         });
