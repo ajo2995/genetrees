@@ -62,6 +62,14 @@ function getTree(req, res) {
         n.interpro = JSON.parse(n.interpro_x);
         delete n.interpro_x;
       }
+      if (n.geneStructure_x) {
+        n.gene_structure = JSON.parse(n.geneStructure_x);
+        delete n.geneStructure_x
+      }
+      if (n.geneRIFs_x) {
+        n.geneRIFs = JSON.parse(n.geneRIFs_x);
+        delete n.geneRIFs_x;
+      }
     });
     if (subtree && !filter) {
       // remove the parentId on the subtree root node so flatToNested works
