@@ -272,6 +272,11 @@ comparaDb.query(geneOrderQuery, function(err, rows) {
       }
     });
 
+    var log = through2.obj(function (row, encoding, done) {
+      console.log(JSON.stringify(row));
+      done();
+    });
+
     console.error('tree queries started');
     comparaDb.query(internalNodeQuery + '; ' + leafNodeQuery + '; ' + speciesTreeQuery)
       .stream()
@@ -280,6 +285,7 @@ comparaDb.query(geneOrderQuery, function(err, rows) {
       .pipe(addInterpro)
       .pipe(addGeneRIFs)
       .pipe(addGeneStructure)
+//      .pipe(log)
       .pipe(createSolrStream(solrUrl))
       .on('end', function() {
         console.log('all tree nodes are in the solr database now.');
