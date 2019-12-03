@@ -36,6 +36,7 @@ var geneOrderQuery = 'SELECT gene_member_id, taxon_id, dnafrag_id from gene_memb
 var taxonomyQuery = 'SELECT taxon_id, parent_id from ncbi_taxa_node';
 var internalNodeQuery = 'SELECT\n' +
   ' gtr.stable_id as treeId,\n' +
+  ' gtr.species_tree_root_id as speciesTreeId,\n' +
   ' gtn.node_id as nodeId,\n' +
   ' gtn.parent_id as parentId,\n' +
   ' gtn.root_id as rootId,\n' +
