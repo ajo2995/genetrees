@@ -462,7 +462,7 @@
   <field name="geneRank" type="pint" multiValued="true" indexed="true" stored="true"/>
   <field name="geneNeighbors" type="pint" multiValued="true" indexed="true" stored="true"/>
   <field name="treeId" type="string" multiValued="false" indexed="true" stored="true"/>
-  <field name="speciesTreeId" type="string" multiValued="false" indexed="true" stored="true"/>
+  <field name="speciesTreeId" type="pint" multiValued="false" indexed="true" stored="true"/>
   <field name="distanceToParent" multiValued="false" type="pfloat" indexed="false" stored="true"/>
 
   <field name="geneRegion" multiValued="false" type="string" indexed="true" stored="true"/>
