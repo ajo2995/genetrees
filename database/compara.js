@@ -20,6 +20,7 @@ function getRedis(db) {
 var interproPromise = getRedis(1);
 var generifsPromise = getRedis(3);
 var geneStructurePromise = getRedis(4);
+var genomePromise = getRedis(5);
 
 var comparaDb = mysql.createConnection({
   host: argv.h,
@@ -103,19 +104,17 @@ var leafNodeQuery = 'SELECT\n' +
   ' gam.seq_member_id = gtn.seq_member_id';
 
 var speciesTreeQuery = 'SELECT\n' +
-  ' str.root_id as treeId,\n' +
-  ' stn.node_id as nodeId,\n' +
-  ' stn.parent_id as parentId,\n' +
-  ' stn.root_id as rootId,\n' +
-  ' stn.distance_to_parent as distanceToParent,\n' +
-  ' stn.left_index as leftIndex,\n' +
-  ' stn.node_name as taxonName,\n' +
-  ' stn.taxon_id as taxonId\n' +
+  ' root_id as treeId,\n' +
+  ' node_id as nodeId,\n' +
+  ' parent_id as parentId,\n' +
+  ' root_id as rootId,\n' +
+  ' distance_to_parent as distanceToParent,\n' +
+  ' left_index as leftIndex,\n' +
+  ' node_name as taxonName,\n' +
+  ' genome_db.taxon_id as taxonId,\n' +
+  ' assembly\n'
   'FROM\n' +
-  ' species_tree_root str,\n' +
-  ' species_tree_node stn\n' +
-  'WHERE\n' +
-  ' str.root_id = stn.root_id';
+  ' species_tree_node left join genome_db on species_tree_node.genome_db_id = genome_db.genome_db_id';
 
 var tidyRow = through2.obj(function (row, encoding, done) {
   row.id = row.treeId + "_" + row.nodeId; // because we need a unique id for solr to be happy?
@@ -273,6 +272,24 @@ comparaDb.query(geneOrderQuery, function(err, rows) {
       }
     });
 
+    var addGenomeToSpecies = through2.obj(function(row, encoding, done) {
+      if (row.assembly) {
+        var that = this;
+        genomePromise.then(function(client) {
+          client.get(row.assembly, function(err, genome) {
+            if (err) {
+              throw err;
+            }
+            if (genome) {
+              row.genome_x = genome;
+            }
+            that.push(row;
+            done();
+          })
+        })
+      }
+    });
+
     console.error('tree queries started');
     comparaDb.query(internalNodeQuery + '; ' + leafNodeQuery + '; ' + speciesTreeQuery)
       .stream()
@@ -281,6 +298,7 @@ comparaDb.query(geneOrderQuery, function(err, rows) {
       .pipe(addInterpro)
       .pipe(addGeneRIFs)
       .pipe(addGeneStructure)
+      .pipe(addGenomeToSpecies)
       .pipe(createSolrStream(solrUrl))
       .on('end', function() {
         console.log('all tree nodes are in the solr database now.');
