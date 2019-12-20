@@ -55,14 +55,15 @@
     innerRadius = outerRadius - 180;
 
   var color = d3.scaleOrdinal()
-    .domain([33154, 3398, 1437201, 2759])
+    .domain([1437201,1437197,147429,4527,29760])
     .range(d3.schemeCategory10);
 
   var taxLabel = [];
-  taxLabel[33154] = 'Outgroups';
-  taxLabel[3398] = 'Monocots';
+  taxLabel[4527] = 'Oryzeae';
+  taxLabel[1437197] = 'Monocots';
   taxLabel[1437201] = 'Dicots';
-  taxLabel[2759] = 'Lower plants';
+  taxLabel[147429] = 'Andropogoneae';
+  taxLabel[29760] = 'Vitis';
 
   var cluster = d3.cluster()
     .size([360, innerRadius])

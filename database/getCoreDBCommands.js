@@ -30,6 +30,7 @@ if (ens) {
   sql += `${ens}_`;
 }
 sql += '%"';
+console.error("sql",sql);
 connection.query(sql, function(err, rows, fields) {
   if (err) throw err;
   var cores = [];

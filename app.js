@@ -6,6 +6,16 @@ var express = require('express');
 var apicache = require('apicache');
 var redis = require('redis');
 var cors = require('cors');
+var fs = require('fs');
+var https = require('https');
+
+//var privateKey = fs.readFileSync( '/etc/ssl/private/apache-selfsigned.key' );
+//var certificate = fs.readFileSync( '/etc/ssl/certs/apache-selfsigned.crt' );
+
+//var sslOptions = {
+//    key: privateKey,
+//    cert: certificate
+//};
 
 var app = express();
 var cache = apicache.options({redisClient: redis.createClient()}).middleware;
@@ -28,7 +38,7 @@ SwaggerExpress.create(config, function(err, swaggerExpress) {
   });
 
   app.get(basePath, function(req, res) {
-    res.redirect(basePath+'/docs?url=http://www.genetrees.org'+basePath+'/swagger');
+    res.redirect(basePath+'/docs?url=https://www.genetrees.org'+basePath+'/swagger');
   });
 
   app.use(basePath+'/docs', express.static(pathToSwaggerUi));
@@ -41,5 +51,9 @@ SwaggerExpress.create(config, function(err, swaggerExpress) {
   var server = app.listen(port);
   if (server) {
     console.log('tree service is listening on port '+port);
+//    port++;
+//    var sslServer = https.createServer(sslOptions, app).listen(port, function() {
+//      console.log("ssl erver listening on port " + port);
+//    });
   }
 });

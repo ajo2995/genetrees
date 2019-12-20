@@ -15,7 +15,8 @@ var request = require('request');
 var FlatToNested = require('flat-to-nested');
 var flatToNested = new FlatToNested({
   id: 'nodeId',
-  parent: 'parentId'
+  parent: 'parentId',
+  options: { deleteParent: false }
 });
 
 module.exports = {

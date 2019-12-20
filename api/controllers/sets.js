@@ -26,35 +26,35 @@ function getSets(req, res) {
   // variables defined in the Swagger document can be referenced using req.swagger.params.{parameter_name}
   var query = req.swagger.params.q.value || '*:*';
   res.json([{
-    setId: 'compara_plants_91',
+    setId: 'compara_95',
+    date: '2019-02-15'
+  },
+  {
+    setId: 'compara_pan_95',
     date: '2017-07-21'
   },
   {
-    setId: 'compara_pan_91',
+    setId: 'compara_metazoa_95',
     date: '2017-07-21'
   },
   {
-    setId: 'compara_metazoa_91',
+    setId: 'compara_fungi_95',
     date: '2017-07-21'
   },
   {
-    setId: 'compara_fungi_91',
+    setId: 'compara_protists_95',
     date: '2017-07-21'
   },
   {
-    setId: 'compara_protists_91',
+    setId: 'compara_plants_95',
     date: '2017-07-21'
   },
   {
-    setId: 'compara_91',
+    setId: 'compara_plants_94',
     date: '2017-07-21'
   },
   {
-    setId: 'compara_92',
-    date: '2017-07-21'
-  },
-  {
-    setId: 'panther_test',
+    setId: 'interpro_71',
     date: '2018-05-11'
   }
 ]);
