@@ -33,7 +33,9 @@ var comparaDb = mysql.createConnection({
 
 var solrUrl = argv.s;
 
-var geneOrderQuery = 'SELECT gene_member_id, taxon_id, dnafrag_id from gene_member order by genome_db_id, dnafrag_id, dnafrag_start';
+var geneOrderQuery = 'SELECT gm.gene_member_id, gm.taxon_id, gm.dnafrag_id, gmhs.gene_trees' +
+  ' FROM gene_member gm LEFT JOIN gene_member_hom_stats gmhs ON gm.gene_member_id = gmhs.gene_member_id' +
+  ' ORDER BY gm.genome_db_id, gm.dnafrag_id, gm.dnafrag_start';
 var taxonomyQuery = 'SELECT taxon_id, parent_id from ncbi_taxa_node';
 var internalNodeQuery = 'SELECT\n' +
   ' gtr.stable_id as treeId,\n' +
@@ -150,9 +152,13 @@ comparaDb.query(geneOrderQuery, function(err, rows) {
   var geneRank = [];
   var leafTaxon = [];
   var dnaFragBounds = [];
+  var isOrphan = [];
   rows.forEach(function(row, idx) {
     geneRank[row.gene_member_id] = idx;
     leafTaxon[row.taxon_id] = 1;
+    if (row.gene_trees === 0) {
+      isOrphan[idx] = true;
+    }
     if (!dnaFragBounds[row.dnafrag_id]) {
       dnaFragBounds[row.dnafrag_id] = {
         start: idx,
@@ -196,7 +202,7 @@ comparaDb.query(geneOrderQuery, function(err, rows) {
         var maxRank = Math.min(rank + 10, dnaFragBounds[row.dnafrag_id].end);
         delete row.dnafrag_id;
         for(var i=minRank; i <= maxRank; i++) {
-          row.geneNeighbors.push(i);
+          if (!isOrphan[i]) row.geneNeighbors.push(i);
         }
         row.taxonAncestors = ancestors[row.taxonId];
         delete row.gene_member_id;
