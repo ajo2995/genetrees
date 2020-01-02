@@ -195,7 +195,7 @@ comparaDb.query(geneOrderQuery, function(err, rows) {
         var minRank = Math.max(rank - 10, dnaFragBounds[row.dnafrag_id].start);
         var maxRank = Math.min(rank + 10, dnaFragBounds[row.dnafrag_id].end);
         delete row.dnafrag_id;
-        for(var i=minRank; i < maxRank; i++) {
+        for(var i=minRank; i <= maxRank; i++) {
           row.geneNeighbors.push(i);
         }
         row.taxonAncestors = ancestors[row.taxonId];
