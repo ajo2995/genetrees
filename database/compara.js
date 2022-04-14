@@ -38,7 +38,8 @@ var geneOrderQuery = 'SELECT gm.gene_member_id, gm.taxon_id, gm.dnafrag_id, gmhs
   ' ORDER BY gm.genome_db_id, gm.dnafrag_id, gm.dnafrag_start';
 var taxonomyQuery = 'SELECT taxon_id, parent_id from ncbi_taxa_node';
 var internalNodeQuery = 'SELECT\n' +
-  ' gtr.stable_id as treeId,\n' +
+  ' case when gtr.stable_id IS NULL then CONCAT("POPLAR0322GT_",gtr.root_id) else gtr.stable_id end as treeId,\n' +
+//  ' gtr.stable_id as treeId,\n' +
   ' gtr.species_tree_root_id as speciesTreeId,\n' +
   ' gtn.node_id as nodeId,\n' +
   ' gtn.parent_id as parentId,\n' +
@@ -56,13 +57,14 @@ var internalNodeQuery = 'SELECT\n' +
   ' gene_tree_root gtr,\n' +
   ' species_tree_node stn\n' +
   'WHERE\n' +
-  ' gtr.stable_id IS NOT NULL and\n' +
+//  ' gtr.stable_id IS NOT NULL and\n' +
   ' gtn.root_id = gtr.root_id and\n' +
   ' gtn.node_id = gtna.node_id and\n' +
   ' gtna.species_tree_node_id = stn.node_id';
 
 var leafNodeQuery = 'SELECT\n' +
-  ' gtr.stable_id as treeId,\n' +
+  ' case when gtr.stable_id IS NULL then CONCAT("POPLAR0322GT_",gtr.root_id) else gtr.stable_id end as treeId,\n' +
+//  ' gtr.stable_id as treeId,\n' +
   ' gtn.node_id as nodeId,\n' +
   ' gtn.parent_id as parentId,\n' +
   ' gtn.root_id as rootId,\n' +
@@ -72,9 +74,9 @@ var leafNodeQuery = 'SELECT\n' +
   ' sm.display_label as proteinName,\n' +
   ' sm.description as proteinDescription,\n' +
   ' sm.taxon_id as taxonId,\n' +
-  ' gdb.display_name as taxonName,\n' +
+  ' ntn.name as taxonName,\n' +
   ' gm.gene_member_id,\n' +
-  ' gm.biotype_group as nodeType,\n' +
+//  ' gm.biotype_group as nodeType,\n' +
   ' gm.stable_id as geneId,\n' +
   ' gm.description as geneDescription,\n' +
   ' gm.display_label as geneName,\n' +
@@ -90,15 +92,17 @@ var leafNodeQuery = 'SELECT\n' +
   ' gene_tree_root gtr,\n' +
   ' seq_member sm,\n' +
   ' genome_db gdb,\n' +
+  ' ncbi_taxa_name ntn,\n' +
   ' sequence sq,\n' +
   ' gene_member gm,\n' +
   ' dnafrag d,\n' +
   ' gene_align_member gam\n' +
   'WHERE\n' +
-  ' gtr.stable_id IS NOT NULL and\n' +
+//  ' gtr.stable_id IS NOT NULL and\n' +
   ' gtn.root_id = gtr.root_id and\n' +
   ' gtn.seq_member_id = sm.seq_member_id and\n' +
   ' sm.genome_db_id = gdb.genome_db_id and\n' +
+  ' gdb.taxon_id = ntn.taxon_id and ntn.name_class="scientific name" and\n' +
   ' sm.sequence_id = sq.sequence_id and\n' +
   ' sm.gene_member_id = gm.gene_member_id and\n' +
   ' gm.dnafrag_id = d.dnafrag_id and\n' +
@@ -267,6 +271,7 @@ comparaDb.query(geneOrderQuery, function(err, rows) {
             if (geneStructure) {
               row.geneStructure_x = geneStructure;
             }
+            row.nodeType = 'protein_coding';
             that.push(row);
             done();
           })
@@ -307,6 +312,10 @@ comparaDb.query(geneOrderQuery, function(err, rows) {
     });
 
     console.error('tree queries started');
+    console.error("internalNodeQuery",internalNodeQuery);
+    console.error("leafNodeQuery",leafNodeQuery);
+    console.error("speciesTreeQuery",speciesTreeQuery);
+
     comparaDb.query(internalNodeQuery + '; ' + leafNodeQuery + '; ' + speciesTreeQuery)
       .stream()
       .pipe(tidyRow)

@@ -54,7 +54,7 @@ connection.query('select species_id,meta_key,meta_value from meta where species_
     meta[r.species_id][r.meta_key] = r.meta_value;
   });
   let running = 0;
-  Object.keys(meta).forEach(function(species_id) {
+  Object.keys(meta).filter(function(species_id) { return !!meta[species_id]['species.production_name'] }).forEach(function(species_id) {
     running++;
     let map = {
       system_name: meta[species_id]['species.production_name'],
@@ -101,6 +101,7 @@ connection.query('select species_id,meta_key,meta_value from meta where species_
           if (err) throw err;
           map.num_genes = rows[0].num_genes;
           running--;
+          console.error('map',meta[species_id]['assembly.default'], JSON.stringify(map));
           console.log(redisify('SET', meta[species_id]['assembly.default'], JSON.stringify(map)));
         })
       })
