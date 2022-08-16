@@ -1,8 +1,9 @@
 var _ = require('lodash');
 var through2 = require('through2');
-var JSONStream = require('JSONStream');
-var duplexer = require('duplexer');
-var request = require('request');
+// var JSONStream = require('JSONStream');
+// var duplexer = require('duplexer');
+// var request = require('request');
+var solr = require('solr-client');
 var mysql = require('mysql');
 var argv = require('minimist')(process.argv.slice(2));
 var Q = require('q');
@@ -31,14 +32,19 @@ var comparaDb = mysql.createConnection({
   multipleStatements: true
 });
 
-var solrUrl = argv.s;
+var solrClient = solr.createClient({
+  core: `trees_${argv.s}`
+});
+
+var setID = argv.s.toUppercase();
+solrClient.autoCommit = true;
 
 var geneOrderQuery = 'SELECT gm.gene_member_id, gm.taxon_id, gm.dnafrag_id, gmhs.gene_trees' +
   ' FROM gene_member gm LEFT JOIN gene_member_hom_stats gmhs ON gm.gene_member_id = gmhs.gene_member_id' +
   ' ORDER BY gm.genome_db_id, gm.dnafrag_id, gm.dnafrag_start';
 var taxonomyQuery = 'SELECT taxon_id, parent_id from ncbi_taxa_node';
 var internalNodeQuery = 'SELECT\n' +
-  ' case when gtr.stable_id IS NULL then CONCAT("POPLAR0322GT_",gtr.root_id) else gtr.stable_id end as treeId,\n' +
+  ` case when gtr.stable_id IS NULL then CONCAT("${setID}GT_",gtr.root_id) else gtr.stable_id end as treeId,\n` +
 //  ' gtr.stable_id as treeId,\n' +
   ' gtr.species_tree_root_id as speciesTreeId,\n' +
   ' gtn.node_id as nodeId,\n' +
@@ -63,7 +69,7 @@ var internalNodeQuery = 'SELECT\n' +
   ' gtna.species_tree_node_id = stn.node_id';
 
 var leafNodeQuery = 'SELECT\n' +
-  ' case when gtr.stable_id IS NULL then CONCAT("POPLAR0322GT_",gtr.root_id) else gtr.stable_id end as treeId,\n' +
+  ` case when gtr.stable_id IS NULL then CONCAT("${setID}GT_",gtr.root_id) else gtr.stable_id end as treeId,\n` +
 //  ' gtr.stable_id as treeId,\n' +
   ' gtn.node_id as nodeId,\n' +
   ' gtn.parent_id as parentId,\n' +
@@ -117,8 +123,8 @@ var speciesTreeQuery = 'SELECT\n' +
   ' distance_to_parent as distanceToParent,\n' +
   ' left_index as leftIndex,\n' +
   ' node_name as taxonName,\n' +
-  ' species_tree_node.taxon_id as taxonId,\n' +
-  ' assembly\n' +
+  ' species_tree_node.taxon_id as taxonId\n' +
+  // ' assembly\n' +
   'FROM\n' +
   ' species_tree_node left join genome_db on species_tree_node.genome_db_id = genome_db.genome_db_id';
 
@@ -131,21 +137,21 @@ var tidyRow = through2.obj(function (row, encoding, done) {
   done();
 });
 
-function createSolrStream(url) {
-  var headers = {
-    'content-type' : 'application/json',
-    'charset' : 'utf-8'
-  };
-  var requestOptions = {
-    url: url + '/update/json?wt-json&commit=true',
-    method: 'POST',
-    headers: headers
-  };
-  var jsonStreamStringify = JSONStream.stringify();
-  var postRequest = request(requestOptions);
-  jsonStreamStringify.pipe(postRequest);
-  return duplexer(jsonStreamStringify, postRequest);
-}
+// function createSolrStream(url) {
+//   var headers = {
+//     'content-type' : 'application/json',
+//     'charset' : 'utf-8'
+//   };
+//   var requestOptions = {
+//     url: url + '/update/json?wt-json&commit=true',
+//     method: 'POST',
+//     headers: headers
+//   };
+//   var jsonStreamStringify = JSONStream.stringify();
+//   var postRequest = request(requestOptions);
+//   jsonStreamStringify.pipe(postRequest);
+//   return duplexer(jsonStreamStringify, postRequest);
+// }
 
 console.error('geneOrderQuery started');
 comparaDb.query(geneOrderQuery, function(err, rows) {
@@ -315,16 +321,21 @@ comparaDb.query(geneOrderQuery, function(err, rows) {
     console.error("internalNodeQuery",internalNodeQuery);
     console.error("leafNodeQuery",leafNodeQuery);
     console.error("speciesTreeQuery",speciesTreeQuery);
-
+    function onerror(err){
+      console.error(err);
+    }
     comparaDb.query(internalNodeQuery + '; ' + leafNodeQuery + '; ' + speciesTreeQuery)
       .stream()
       .pipe(tidyRow)
       .pipe(addRank)
       .pipe(addInterpro)
-      .pipe(addGeneRIFs)
-      .pipe(addGeneStructure)
-      .pipe(addGenomeToSpecies)
-      .pipe(createSolrStream(solrUrl))
+      // .pipe(addGeneRIFs)
+      // .pipe(addGeneStructure)
+      // .pipe(addGenomeToSpecies)
+      .pipe(solrClient.createAddStream())
+      .on('error',onerror)
+      // .pipe(log)
+      // .pipe(createSolrStream(solrUrl))
       .on('end', function() {
         console.log('all tree nodes are in the solr database now.');
         comparaDb.end(function(err) {

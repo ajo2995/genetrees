@@ -1,7 +1,8 @@
 var _ = require('lodash');
-var JSONStream = require('JSONStream');
-var duplexer = require('duplexer');
-var request = require('request');
+// var JSONStream = require('JSONStream');
+// var duplexer = require('duplexer');
+// var request = require('request');
+var solr = require('solr-client');
 var argv = require('minimist')(process.argv.slice(2));
 var fs = require('fs');
 var XmlStream = require('xml-stream');
@@ -17,23 +18,27 @@ var spigot = require('stream-spigot');
 
 var parentChildFile = argv.p;
 var xmlFile = argv.x;
-var solrUrl = argv.s;
 
-function createSolrStream(url) {
-  var headers = {
-    'content-type' : 'application/json',
-    'charset' : 'utf-8'
-  };
-  var requestOptions = {
-    url: url + '/update/json?wt-json&commit=true',
-    method: 'POST',
-    headers: headers
-  };
-  var jsonStreamStringify = JSONStream.stringify();
-  var postRequest = request(requestOptions);
-  jsonStreamStringify.pipe(postRequest);
-  return duplexer(jsonStreamStringify, postRequest);
-}
+var solrClient = solr.createClient({
+  core: argv.s
+});
+solrClient.autoCommit = true;
+
+// function createSolrStream(url) {
+//   var headers = {
+//     'content-type' : 'application/json',
+//     'charset' : 'utf-8'
+//   };
+//   var requestOptions = {
+//     url: url + '/update/json?wt-json&commit=true',
+//     method: 'POST',
+//     headers: headers
+//   };
+//   var jsonStreamStringify = JSONStream.stringify();
+//   var postRequest = request(requestOptions);
+//   jsonStreamStringify.pipe(postRequest);
+//   return duplexer(jsonStreamStringify, postRequest);
+// }
 
 
 // read the parentChildFile into memory
@@ -93,7 +98,9 @@ require('readline').createInterface({
   });
   xml.on('end', function() {
     spigot({objectMode: true, highWaterMark: 1}, nodes)
-      .pipe(createSolrStream(solrUrl))
+      // .pipe(createSolrStream(solrUrl))
+      .pipe(solrClient.createAddStream())
+      .on('error', function(err) {console.error(err)})
       .on('end', function() {
          console.log('all tree nodes are in the solr database now.');
        });
