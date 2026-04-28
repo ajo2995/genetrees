@@ -18,8 +18,8 @@ var https = require('https');
 //};
 
 var app = express();
-var cache = apicache.options({redisClient: redis.createClient()}).middleware;
-app.use(cache('1 hour'));
+// var cache = apicache.options({redisClient: redis.createClient()}).middleware;
+// app.use(cache('1 hour'));
 app.use(cors());
 
 module.exports = app; // for testing

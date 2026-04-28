@@ -14,6 +14,7 @@
 module.exports = {
   getSets: getSets
 };
+var request = require('request');
 
 /*
   Functions in a127 controllers used for operations should take two parameters:
@@ -24,38 +25,23 @@ module.exports = {
 
 function getSets(req, res) {
   // variables defined in the Swagger document can be referenced using req.swagger.params.{parameter_name}
-  var query = req.swagger.params.q.value || '*:*';
-  res.json([{
-    setId: 'compara_95',
-    date: '2019-02-15'
-  },
-  {
-    setId: 'compara_pan_95',
-    date: '2017-07-21'
-  },
-  {
-    setId: 'compara_metazoa_95',
-    date: '2017-07-21'
-  },
-  {
-    setId: 'compara_fungi_95',
-    date: '2017-07-21'
-  },
-  {
-    setId: 'compara_protists_95',
-    date: '2017-07-21'
-  },
-  {
-    setId: 'compara_plants_95',
-    date: '2017-07-21'
-  },
-  {
-    setId: 'compara_plants_94',
-    date: '2017-07-21'
-  },
-  {
-    setId: 'interpro_71',
-    date: '2018-05-11'
-  }
-]);
+  var url = `http://localhost:8983/solr/admin/cores?action=STATUS&indexInfo=false`;
+  request(url, function(err, response, body) {
+    if (err) {
+      res.json({error: err});
+    }
+    var results = [];
+    var statusHash = JSON.parse(body).status;
+    if (statusHash) {
+      for (var core in statusHash) {
+        if (core.startsWith('trees_')) {
+          results.push({
+            setId: core.replace('trees_',''),
+            date: statusHash[core].startTime
+          })
+        }
+      }
+    }
+    res.json(results)
+  })
 }

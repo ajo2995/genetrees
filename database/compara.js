@@ -18,7 +18,7 @@ function getRedis(db) {
   });
   return deferred.promise;
 }
-var interproPromise = getRedis(1);
+var interproPromise = getRedis(6);
 var generifsPromise = getRedis(3);
 var geneStructurePromise = getRedis(4);
 var genomePromise = getRedis(5);
@@ -33,10 +33,13 @@ var comparaDb = mysql.createConnection({
 });
 
 var solrClient = solr.createClient({
-  core: `trees_${argv.s}`
+  host: 'localhost',
+  port: '8983',
+  core: `trees_${argv.s}`,
+  protocol: 'http'
 });
 
-var setID = argv.s.toUppercase();
+var setID = argv.s.toUpperCase();
 solrClient.autoCommit = true;
 
 var geneOrderQuery = 'SELECT gm.gene_member_id, gm.taxon_id, gm.dnafrag_id, gmhs.gene_trees' +
@@ -64,6 +67,7 @@ var internalNodeQuery = 'SELECT\n' +
   ' species_tree_node stn\n' +
   'WHERE\n' +
 //  ' gtr.stable_id IS NOT NULL and\n' +
+  ' gtr.clusterset_id = "default" and\n' +
   ' gtn.root_id = gtr.root_id and\n' +
   ' gtn.node_id = gtna.node_id and\n' +
   ' gtna.species_tree_node_id = stn.node_id';
@@ -106,6 +110,7 @@ var leafNodeQuery = 'SELECT\n' +
   'WHERE\n' +
 //  ' gtr.stable_id IS NOT NULL and\n' +
   ' gtn.root_id = gtr.root_id and\n' +
+  ' gtr.clusterset_id = "default" and\n' +
   ' gtn.seq_member_id = sm.seq_member_id and\n' +
   ' sm.genome_db_id = gdb.genome_db_id and\n' +
   ' gdb.taxon_id = ntn.taxon_id and ntn.name_class="scientific name" and\n' +
@@ -123,8 +128,8 @@ var speciesTreeQuery = 'SELECT\n' +
   ' distance_to_parent as distanceToParent,\n' +
   ' left_index as leftIndex,\n' +
   ' node_name as taxonName,\n' +
-  ' species_tree_node.taxon_id as taxonId\n' +
-  // ' assembly\n' +
+  ' species_tree_node.taxon_id as taxonId,\n' +
+  ' assembly\n' +
   'FROM\n' +
   ' species_tree_node left join genome_db on species_tree_node.genome_db_id = genome_db.genome_db_id';
 
@@ -291,6 +296,7 @@ comparaDb.query(geneOrderQuery, function(err, rows) {
 
     var log = through2.obj(function (row, encoding, done) {
       console.log(JSON.stringify(row));
+      this.push(row);
       done();
     });
 
@@ -330,14 +336,14 @@ comparaDb.query(geneOrderQuery, function(err, rows) {
       .pipe(addRank)
       .pipe(addInterpro)
       // .pipe(addGeneRIFs)
-      // .pipe(addGeneStructure)
-      // .pipe(addGenomeToSpecies)
+      .pipe(addGeneStructure)
+      .pipe(addGenomeToSpecies)
+      // .pipe(log)
       .pipe(solrClient.createAddStream())
       .on('error',onerror)
-      // .pipe(log)
       // .pipe(createSolrStream(solrUrl))
       .on('end', function() {
-        console.log('all tree nodes are in the solr database now.');
+        console.error('all tree nodes are in the solr database now.');
         comparaDb.end(function(err) {
           console.error('closed mysql connection');
           interproPromise.then(function(client) {

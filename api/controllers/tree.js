@@ -38,7 +38,7 @@ function getTree(req, res) {
   var subtree = req.swagger.params.subtree.value || 0;
 
   // get the url for the solr instance with setId trees
-  var url = 'http://localhost:8983/solr/'+setId+'/query?rows=10000&q=';
+  var url = 'http://localhost:8983/solr/trees_'+setId+'/query?rows=10000&q=';
   // build a query for the given tree
   var solrQuery = 'treeId:'+treeId;
   // possibly apply filters and subtree

@@ -30,7 +30,7 @@ function getNeighbors(req, res) {
   var filter = req.swagger.params.filter.value || '';
 
   // get the url for the solr instance with setId trees
-  var url = 'http://localhost:8983/solr/'+setId+'/query?rows=20000';
+  var url = 'http://localhost:8983/solr/trees_'+setId+'/query?rows=200000';
   url += '&fl=treeId,nodeType,gene*';
   // build a query for the given tree
   var solrQuery = '&q={!graph from=geneNeighbors to=geneRank maxDepth=1}treeId:'+treeId;

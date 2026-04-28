@@ -53,6 +53,7 @@ connection.query(sql, function(err, rows) {
     if (todo === 0) {
       client.quit();
     }
+    console.error(`found ${rows.length} entrezGene xrefs`);
     rows.forEach(function(row) {
       var ensemblGene = row.stable_id;
       var entrezGene = row.dbprimary_acc;

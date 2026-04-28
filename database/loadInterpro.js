@@ -45,7 +45,7 @@ connection.query(sql, function(err, rows) {
   connection.end(function() {
     console.error('closed mysql connection');
   });
-  console.log(redisify('SELECT','1'));
+  console.log(redisify('SELECT','6'));
   for (var id in annotations) {
     console.log(redisify('SET',id,JSON.stringify(annotations[id])));
   }
